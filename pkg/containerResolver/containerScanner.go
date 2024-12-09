@@ -8,21 +8,18 @@ import (
 )
 
 type ContainersResolver struct {
-	imagesExtractor.ImagesExtractorInterface
-	syftPackagesExtractor.SyftPackagesExtractorInterface
+	imagesExtractor.ImagesExtractor
+	syftPackagesExtractor.SyftPackagesExtractor
 }
 
 func NewContainerResolver() ContainersResolver {
-	ImagesExtractor := new(imagesExtractor.ImagesExtractor)
-	SyftPackagesExtractor := new(syftPackagesExtractor.SyftPackagesExtractor)
-
 	return ContainersResolver{
-		ImagesExtractorInterface:       ImagesExtractor,
-		SyftPackagesExtractorInterface: SyftPackagesExtractor,
+		ImagesExtractor:       imagesExtractor.NewImagesExtractor(),
+		SyftPackagesExtractor: syftPackagesExtractor.NewSyftPackagesExtractor(),
 	}
 }
 
-func (cr ContainersResolver) Resolve(scanPath string, resolutionFolderPath string, images []string, isDebug bool) error {
+func (cr *ContainersResolver) Resolve(scanPath string, resolutionFolderPath string, images []string, isDebug bool) error {
 
 	log.Debug().Msgf("Resolve func parameters: scanPath=%s, resolutionFolderPath=%s, images=%s, isDebug=%t", scanPath, resolutionFolderPath, images, isDebug)
 

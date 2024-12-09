@@ -3,8 +3,8 @@ module github.com/Checkmarx/containers-resolver
 go 1.23.3
 
 require (
-	github.com/Checkmarx/containers-images-extractor v1.0.2
-	github.com/Checkmarx/containers-syft-packages-extractor v1.0.2
+	github.com/Checkmarx/containers-images-extractor v1.0.3
+	github.com/Checkmarx/containers-syft-packages-extractor v1.0.3
 	github.com/Checkmarx/containers-types v1.0.0
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.10.0

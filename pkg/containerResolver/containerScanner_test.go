@@ -60,8 +60,8 @@ func TestResolve(t *testing.T) {
 	createTestFolder("../../test_files/resolution")
 
 	resolver := containersResolver.ContainersResolver{
-		ImagesExtractorInterface:       mockImagesExtractor,
-		SyftPackagesExtractorInterface: mockSyftPackagesExtractor,
+		ImagesExtractor:       mockImagesExtractor,
+		SyftPackagesExtractor: mockSyftPackagesExtractor,
 	}
 
 	sampleFileImages := types.FileImages{
