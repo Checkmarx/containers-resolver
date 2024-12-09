@@ -12,6 +12,16 @@ type ContainersResolver struct {
 	syftPackagesExtractor.SyftPackagesExtractorInterface
 }
 
+func NewContainerResolver() ContainersResolver {
+	ImagesExtractor := new(imagesExtractor.ImagesExtractor)
+	SyftPackagesExtractor := new(syftPackagesExtractor.SyftPackagesExtractor)
+
+	return ContainersResolver{
+		ImagesExtractorInterface:       ImagesExtractor,
+		SyftPackagesExtractorInterface: SyftPackagesExtractor,
+	}
+}
+
 func (cr ContainersResolver) Resolve(scanPath string, resolutionFolderPath string, images []string, isDebug bool) error {
 
 	log.Debug().Msgf("Resolve func parameters: scanPath=%s, resolutionFolderPath=%s, images=%s, isDebug=%t", scanPath, resolutionFolderPath, images, isDebug)
@@ -24,6 +34,7 @@ func (cr ContainersResolver) Resolve(scanPath string, resolutionFolderPath strin
 	}
 
 	//1. extract files
+	log.Debug().Msg("Call ExtractFiles...")
 	filesWithImages, settingsFiles, outputPath, err := cr.ExtractFiles(scanPath)
 	if err != nil {
 		log.Err(err).Msg("Could not extract files.")

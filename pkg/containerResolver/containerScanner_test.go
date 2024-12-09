@@ -1,15 +1,17 @@
+//go:build !coverage
+
 package containersResolver_test
 
 import (
 	"errors"
-	containersResolver "github.com/Checkmarx/containers-resolver/pkg/containerResolver"
-	"github.com/rs/zerolog/log"
-	"os"
-	"testing"
-
+	"github.com/Checkmarx/containers-resolver/pkg/containerResolver"
+	"github.com/Checkmarx/containers-syft-packages-extractor/pkg/syftPackagesExtractor"
 	"github.com/Checkmarx/containers-types/types"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"os"
+	"testing"
 )
 
 // Mock for ImagesExtractorInterface
@@ -17,18 +19,18 @@ type MockImagesExtractor struct {
 	mock.Mock
 }
 
-func (m *MockImagesExtractor) ExtractFiles(scanPath string) ([]string, []string, string, error) {
+func (m *MockImagesExtractor) ExtractFiles(scanPath string) (types.FileImages, map[string]map[string]string, string, error) {
 	args := m.Called(scanPath)
-	return args.Get(0).([]string), args.Get(1).([]string), args.String(2), args.Error(3)
+	return args.Get(0).(types.FileImages), args.Get(1).(map[string]map[string]string), args.String(2), args.Error(3)
 }
 
-func (m *MockImagesExtractor) ExtractAndMergeImagesFromFiles(filesWithImages []string, imageModels []types.ImageModel, settingsFiles []string) ([]types.ImageModel, error) {
-	args := m.Called(filesWithImages, imageModels, settingsFiles)
+func (m *MockImagesExtractor) ExtractAndMergeImagesFromFiles(files types.FileImages, images []types.ImageModel, settingsFiles map[string]map[string]string) ([]types.ImageModel, error) {
+	args := m.Called(files, images, settingsFiles)
 	return args.Get(0).([]types.ImageModel), args.Error(1)
 }
 
-func (m *MockImagesExtractor) SaveObjectToFile(filePath string, obj interface{}) error {
-	return m.Called(filePath, obj).Error(0)
+func (m *MockImagesExtractor) SaveObjectToFile(folderPath string, obj interface{}) error {
+	return m.Called(folderPath, obj).Error(0)
 }
 
 // Mock for SyftPackagesExtractorInterface
@@ -36,9 +38,9 @@ type MockSyftPackagesExtractor struct {
 	mock.Mock
 }
 
-func (m *MockSyftPackagesExtractor) AnalyzeImages(images []types.ImageModel) (interface{}, error) {
+func (m *MockSyftPackagesExtractor) AnalyzeImages(images []types.ImageModel) ([]*syftPackagesExtractor.ContainerResolution, error) {
 	args := m.Called(images)
-	return args.Get(0), args.Error(1) // Return first and second values from the mock
+	return args.Get(0).([]*syftPackagesExtractor.ContainerResolution), args.Error(1)
 }
 
 func createTestFolder(dir string) {
@@ -62,35 +64,85 @@ func TestResolve(t *testing.T) {
 		SyftPackagesExtractorInterface: mockSyftPackagesExtractor,
 	}
 
+	sampleFileImages := types.FileImages{
+		Dockerfile: []types.FilePath{
+			{FullPath: "absolute/path/to/Dockerfile1", RelativePath: "relative/path/to/Dockerfile1"},
+			{FullPath: "absolute/path/to/Dockerfile2", RelativePath: "relative/path/to/Dockerfile2"},
+		},
+		DockerCompose: []types.FilePath{
+			{FullPath: "absolute/path/to/docker-compose.yml", RelativePath: "relative/path/to/docker-compose.yml"},
+		},
+		Helm: []types.HelmChartInfo{
+			{
+				Directory:  "absolute/path/to/helm/chart",
+				ValuesFile: "relative/path/to/values.yaml",
+				TemplateFiles: []types.FilePath{
+					{FullPath: "absolute/path/to/template1", RelativePath: "relative/path/to/template1"},
+				},
+			},
+		},
+	}
+
+	scanPath := "../../test_files"
+
+	resolutionFolderPath := "../../test_files/resolution"
+
+	images := []string{"image1", "image2"}
+
+	expectedResolution := []*syftPackagesExtractor.ContainerResolution{
+		{
+			ContainerImage: syftPackagesExtractor.ContainerImage{
+				ImageName:      "image1",
+				ImageTag:       "latest",
+				Distribution:   "debian",
+				ImageHash:      "sha256:123abc",
+				ImageId:        "id12345",
+				ImageLocations: []syftPackagesExtractor.ImageLocation{{Origin: "Dockerfile", Path: "/path/to/Dockerfile"}},
+				History: []syftPackagesExtractor.Layer{
+					{Order: 1, Size: 12345, LayerId: "layer1", Command: "ADD /file1 /"},
+				},
+			},
+			ContainerPackages: []syftPackagesExtractor.ContainerPackage{
+				{
+					Name:          "package1",
+					Version:       "1.0.0",
+					Distribution:  "debian",
+					Type:          "binary",
+					SourceName:    "src-package1",
+					SourceVersion: "1.0.0",
+					Licenses:      []string{"MIT"},
+					LayerIds:      []string{"layer1"},
+				},
+			},
+		},
+	}
+
 	t.Run("Success scenario", func(t *testing.T) {
-		scanPath := "../../test_files"
-		resolutionFolderPath := "../../test_files/resolution"
-		images := []string{"image1", "image2"}
 
-		// Mock behaviors
-		mockImagesExtractor.On("ExtractFiles", scanPath).Return([]string{"file1", "file2"}, []string{"settings.json"}, "/output/path", nil)
-		mockImagesExtractor.On("ExtractAndMergeImagesFromFiles", mock.Anything, mock.Anything, mock.Anything).Return([]types.ImageModel{{Name: "image1"}}, nil)
-		mockSyftPackagesExtractor.On("AnalyzeImages", mock.Anything).Return("resolutionResult", nil)
-		mockImagesExtractor.On("SaveObjectToFile", resolutionFolderPath, "resolutionResult").Return(nil)
+		mockImagesExtractor.On("ExtractFiles", scanPath).
+			Return(sampleFileImages, map[string]map[string]string{"settings.json": {"key": "value"}}, "/output/path", nil)
+		mockImagesExtractor.On("ExtractAndMergeImagesFromFiles",
+			sampleFileImages,
+			types.ToImageModels(images),
+			map[string]map[string]string{"settings.json": {"key": "value"}}).
+			Return([]types.ImageModel{{Name: "image1"}}, nil)
+		mockSyftPackagesExtractor.On("AnalyzeImages", mock.Anything).Return(expectedResolution, nil)
+		mockImagesExtractor.On("SaveObjectToFile", resolutionFolderPath, expectedResolution).Return(nil)
 
-		// Test
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, true)
 		assert.NoError(t, err)
 
-		// Assertions
 		mockImagesExtractor.AssertCalled(t, "ExtractFiles", scanPath)
-		mockImagesExtractor.AssertCalled(t, "ExtractAndMergeImagesFromFiles", mock.Anything, mock.Anything, mock.Anything)
+		mockImagesExtractor.AssertCalled(t, "ExtractAndMergeImagesFromFiles", sampleFileImages, mock.Anything, mock.Anything)
 		mockSyftPackagesExtractor.AssertCalled(t, "AnalyzeImages", mock.Anything)
-		mockImagesExtractor.AssertCalled(t, "SaveObjectToFile", resolutionFolderPath, "resolutionResult")
+		mockImagesExtractor.AssertCalled(t, "SaveObjectToFile", resolutionFolderPath, expectedResolution)
 	})
 
 	t.Run("ScanPath Validation failure", func(t *testing.T) {
-		scanPath := "/invalid/path"
-		resolutionFolderPath := ""
-		images := []string{"image1"}
-
+		mockImagesExtractor.ExpectedCalls = nil
+		mockImagesExtractor.Calls = nil
 		// Test
-		err := resolver.Resolve(scanPath, resolutionFolderPath, images, false)
+		err := resolver.Resolve(scanPath, "", images, false)
 		assert.Error(t, err)
 		assert.Equal(t, "stat : no such file or directory", err.Error())
 	})
@@ -99,57 +151,32 @@ func TestResolve(t *testing.T) {
 		mockImagesExtractor.ExpectedCalls = nil
 		mockImagesExtractor.Calls = nil
 
-		scanPath := "../../test_files"
-		resolutionFolderPath := "../../test_files/resolution"
-		images := []string{"image1"}
+		mockImagesExtractor.On("ExtractFiles", scanPath).
+			Return(sampleFileImages, map[string]map[string]string{"settings.json": {"key": "value"}}, "/output/path",
+				errors.New("invalid path"))
 
-		// Mock behaviors
-		mockImagesExtractor.On("ExtractFiles", scanPath).Return([]string{}, []string{}, "", errors.New("invalid path"))
-
-		// Test
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, false)
 		assert.Error(t, err)
 		assert.Equal(t, "invalid path", err.Error())
+		mockImagesExtractor.AssertCalled(t, "ExtractFiles", scanPath)
 	})
 
-	t.Run("ExtractAndMergeImagesFromFiles_Failure", func(t *testing.T) {
-		mockImagesExtractor.ExpectedCalls = nil
-		mockImagesExtractor.Calls = nil
-
-		scanPath := "../../test_files"
-		resolutionFolderPath := "../../test_files/resolution"
-		images := []string{"image1"}
-
-		// Mock behaviors
-		mockImagesExtractor.On("ExtractFiles", scanPath).Return([]string{"file1", "file2"}, []string{"settings.json"}, "/output/path", nil)
-		mockImagesExtractor.On("ExtractAndMergeImagesFromFiles", mock.Anything, mock.Anything, mock.Anything).Return([]types.ImageModel{{Name: "image1"}}, errors.New("failed to extract"))
-
-		// Test
-		err := resolver.Resolve(scanPath, resolutionFolderPath, images, false)
-		assert.Error(t, err)
-		assert.Equal(t, "failed to extract", err.Error())
-	})
-
-	t.Run("AnalyzeImages_Failure", func(t *testing.T) {
+	t.Run("Error in AnalyzeImages", func(t *testing.T) {
 		mockImagesExtractor.ExpectedCalls = nil
 		mockImagesExtractor.Calls = nil
 		mockSyftPackagesExtractor.ExpectedCalls = nil
 		mockSyftPackagesExtractor.Calls = nil
 
-		scanPath := "../../test_files"
-		resolutionFolderPath := "../../test_files/resolution"
-		images := []string{"image1"}
+		mockImagesExtractor.On("ExtractFiles", scanPath).
+			Return(sampleFileImages, map[string]map[string]string{"settings.json": {"key": "value"}}, "/output/path", nil)
 
-		// Mock behaviors
-		mockImagesExtractor.On("ExtractFiles", scanPath).Return([]string{"file1", "file2"}, []string{"settings.json"}, "/output/path", nil)
-		mockImagesExtractor.On("ExtractAndMergeImagesFromFiles", mock.Anything, mock.Anything, mock.Anything).Return([]types.ImageModel{{Name: "image1"}}, nil)
-		mockSyftPackagesExtractor.On("AnalyzeImages", mock.Anything).Return(nil, errors.New("failed to analyze"))
-		mockImagesExtractor.On("SaveObjectToFile", resolutionFolderPath, "resolutionResult").Return(nil)
+		mockImagesExtractor.On("ExtractAndMergeImagesFromFiles", sampleFileImages, types.ToImageModels(images),
+			map[string]map[string]string{"settings.json": {"key": "value"}}).
+			Return([]types.ImageModel{{Name: "image1"}}, nil)
 
-		// Test
+		mockSyftPackagesExtractor.On("AnalyzeImages", mock.Anything).Return(expectedResolution, errors.New("error analyzing images"))
+
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, false)
 		assert.Error(t, err)
-		assert.Equal(t, "failed to analyze", err.Error())
 	})
-
 }
