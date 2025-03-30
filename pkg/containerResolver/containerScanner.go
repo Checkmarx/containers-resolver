@@ -22,6 +22,7 @@ func NewContainerResolver() ContainersResolver {
 
 func (cr *ContainersResolver) Resolve(scanPath string, resolutionFolderPath string, images []string, isDebug bool) error {
 
+	//checking if the debug flag is on and configure the logger
 	if isDebug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	} else {
@@ -37,7 +38,7 @@ func (cr *ContainersResolver) Resolve(scanPath string, resolutionFolderPath stri
 	}
 
 	//1. extract files
-	//log.Debug().Msg("Call ExtractFiles...")
+	log.Debug().Msg("Call ExtractFiles...")
 	filesWithImages, settingsFiles, outputPath, err := cr.ExtractFiles(scanPath)
 	if err != nil {
 		log.Err(err).Msg("Could not extract files.")
