@@ -4,6 +4,7 @@ import (
 	"github.com/Checkmarx/containers-images-extractor/pkg/imagesExtractor"
 	"github.com/Checkmarx/containers-syft-packages-extractor/pkg/syftPackagesExtractor"
 	"github.com/Checkmarx/containers-types/types"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -21,6 +22,12 @@ func NewContainerResolver() ContainersResolver {
 
 func (cr *ContainersResolver) Resolve(scanPath string, resolutionFolderPath string, images []string, isDebug bool) error {
 
+	//checking if the debug flag is on and configure the logger
+	if isDebug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
 	log.Debug().Msgf("Resolve func parameters: scanPath=%s, resolutionFolderPath=%s, images=%s, isDebug=%t", scanPath, resolutionFolderPath, images, isDebug)
 
 	// 0. validate input
