@@ -7,7 +7,7 @@ This module supports scanning and analyzing the following types of files to extr
 
 - **Dockerfile**: Dockerfiles are text documents that contain all the commands a user could call on the command line to assemble an image. This module can parse Dockerfiles to identify image dependencies and extract Docker images specified within them.
 
-- **Docker Compose Files**: Docker Compose is a tool used to define and run multi-container Docker applications. This module can process Docker Compose YAML files to extract Docker images referenced within them, enabling analysis of the entire application stack.
+- **Docker Compose Files**: Docker Compose is a tool that defines and runs multi-container Docker applications. This module can process Docker Compose YAML files to extract Docker images referenced within them, enabling analysis of the entire application stack.
 
 - **Helm Charts**: Helm is a package manager for Kubernetes that provides a way to define, install, and manage Kubernetes applications. Helm charts, which are YAML files, define the structure and configuration of Kubernetes resources. This module can parse Helm charts to extract Docker images used in deploying Kubernetes applications.
 
