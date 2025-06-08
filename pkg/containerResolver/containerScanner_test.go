@@ -4,14 +4,16 @@ package containersResolver_test
 
 import (
 	"errors"
-	"github.com/Checkmarx/containers-resolver/pkg/containerResolver"
+	"os"
+	"path/filepath"
+	"testing"
+
+	containersResolver "github.com/Checkmarx/containers-resolver/pkg/containerResolver"
 	"github.com/Checkmarx/containers-syft-packages-extractor/pkg/syftPackagesExtractor"
 	"github.com/Checkmarx/containers-types/types"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"os"
-	"testing"
 )
 
 // Mock for ImagesExtractorInterface
@@ -92,7 +94,7 @@ func TestResolve(t *testing.T) {
 	expectedResolution := []*syftPackagesExtractor.ContainerResolution{
 		{
 			ContainerImage: syftPackagesExtractor.ContainerImage{
-				ImageName:      "image1",
+				ImageName:      "image1:blabla",
 				ImageTag:       "latest",
 				Distribution:   "debian",
 				ImageHash:      "sha256:123abc",
@@ -118,6 +120,8 @@ func TestResolve(t *testing.T) {
 	}
 
 	t.Run("Success scenario", func(t *testing.T) {
+		checkmarxPath := filepath.Join(resolutionFolderPath, ".checkmarx", "containers")
+		createTestFolder(checkmarxPath)
 
 		mockImagesExtractor.On("ExtractFiles", scanPath).
 			Return(sampleFileImages, map[string]map[string]string{"settings.json": {"key": "value"}}, "/output/path", nil)
@@ -127,7 +131,7 @@ func TestResolve(t *testing.T) {
 			map[string]map[string]string{"settings.json": {"key": "value"}}).
 			Return([]types.ImageModel{{Name: "image1"}}, nil)
 		mockSyftPackagesExtractor.On("AnalyzeImages", mock.Anything).Return(expectedResolution, nil)
-		mockImagesExtractor.On("SaveObjectToFile", resolutionFolderPath, expectedResolution).Return(nil)
+		mockImagesExtractor.On("SaveObjectToFile", checkmarxPath, expectedResolution).Return(nil)
 
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, true)
 		assert.NoError(t, err)
@@ -135,7 +139,7 @@ func TestResolve(t *testing.T) {
 		mockImagesExtractor.AssertCalled(t, "ExtractFiles", scanPath)
 		mockImagesExtractor.AssertCalled(t, "ExtractAndMergeImagesFromFiles", sampleFileImages, mock.Anything, mock.Anything)
 		mockSyftPackagesExtractor.AssertCalled(t, "AnalyzeImages", mock.Anything)
-		mockImagesExtractor.AssertCalled(t, "SaveObjectToFile", resolutionFolderPath, expectedResolution)
+		mockImagesExtractor.AssertCalled(t, "SaveObjectToFile", checkmarxPath, expectedResolution)
 	})
 
 	t.Run("ScanPath Validation failure", func(t *testing.T) {
@@ -150,6 +154,9 @@ func TestResolve(t *testing.T) {
 	t.Run("ExtractFilesError", func(t *testing.T) {
 		mockImagesExtractor.ExpectedCalls = nil
 		mockImagesExtractor.Calls = nil
+
+		checkmarxPath := filepath.Join(resolutionFolderPath, ".checkmarx", "containers")
+		createTestFolder(checkmarxPath)
 
 		mockImagesExtractor.On("ExtractFiles", scanPath).
 			Return(sampleFileImages, map[string]map[string]string{"settings.json": {"key": "value"}}, "/output/path",
@@ -166,6 +173,9 @@ func TestResolve(t *testing.T) {
 		mockImagesExtractor.Calls = nil
 		mockSyftPackagesExtractor.ExpectedCalls = nil
 		mockSyftPackagesExtractor.Calls = nil
+
+		checkmarxPath := filepath.Join(resolutionFolderPath, ".checkmarx", "containers")
+		createTestFolder(checkmarxPath)
 
 		mockImagesExtractor.On("ExtractFiles", scanPath).
 			Return(sampleFileImages, map[string]map[string]string{"settings.json": {"key": "value"}}, "/output/path", nil)
