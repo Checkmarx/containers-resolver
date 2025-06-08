@@ -96,10 +96,13 @@ func validate(resolutionFolderPath string) (string, error) {
 func cleanup(originalPath string, outputPath string, checkmarxPath string) error {
 	if outputPath != "" && outputPath != originalPath && checkmarxPath != "" {
 		err := imagesExtractor.DeleteDirectory(outputPath)
-		imagesExtractor.DeleteDirectory(checkmarxPath)
+		cxErr := imagesExtractor.DeleteDirectory(checkmarxPath)
 
 		if err != nil {
 			return err
+		}
+		if cxErr != nil {
+			return cxErr
 		}
 	}
 	return nil
