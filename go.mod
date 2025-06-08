@@ -289,5 +289,3 @@ require (
 )
 
 replace google.golang.org/protobuf => google.golang.org/protobuf v1.33.0
-
-replace github.com/Checkmarx/containers-resolver => ./
