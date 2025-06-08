@@ -3,8 +3,8 @@ module github.com/Checkmarx/containers-resolver
 go 1.24.1
 
 require (
-	github.com/Checkmarx/containers-images-extractor v1.0.7
-	github.com/Checkmarx/containers-syft-packages-extractor v1.0.10
+	github.com/Checkmarx/containers-images-extractor v1.0.8
+	github.com/Checkmarx/containers-syft-packages-extractor v1.0.11
 	github.com/Checkmarx/containers-types v1.0.3
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.10.0
@@ -289,3 +289,5 @@ require (
 )
 
 replace google.golang.org/protobuf => google.golang.org/protobuf v1.33.0
+
+replace github.com/Checkmarx/containers-resolver => ./
