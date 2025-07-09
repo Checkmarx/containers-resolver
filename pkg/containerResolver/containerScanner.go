@@ -56,7 +56,7 @@ func (cr *ContainersResolver) Resolve(scanPath string, resolutionFolderPath stri
 	}
 
 	//4. get images resolution
-	resolutionResult, err := cr.AnalyzeImages(imagesToAnalyze)
+	resolutionResult, err := cr.AnalyzeImagesWithPlatform(imagesToAnalyze, "linux/amd64")
 	if err != nil {
 		log.Err(err).Msg("Could not analyze images.")
 		return err
