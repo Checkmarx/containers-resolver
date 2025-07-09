@@ -63,8 +63,8 @@ github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/Checkmarx/containers-images-extractor v1.0.10 h1:RxXbw03SPkVjvw2XR05RSLh+YTTQ2KshrQhOhTMFey8=
 github.com/Checkmarx/containers-images-extractor v1.0.10/go.mod h1:KqOq3DUekL9VbklOVgTdZJC/+KLOYdfEoCSY/SWHdxU=
-github.com/Checkmarx/containers-syft-packages-extractor v1.0.12 h1:BgLMkqu0hfoVRoc9/h6Trf6qXoVnAYgOH3Oar78PWPg=
-github.com/Checkmarx/containers-syft-packages-extractor v1.0.12/go.mod h1:EFeB4//lO4KMVj9+eMg6z5jnO9F1e1T4jUoIcx0/19M=
+github.com/Checkmarx/containers-syft-packages-extractor v1.0.13 h1:9ah0rruMGgRiug/bD/JJDSrDqEqS7sKGVdc5sqbkwk8=
+github.com/Checkmarx/containers-syft-packages-extractor v1.0.13/go.mod h1:EFeB4//lO4KMVj9+eMg6z5jnO9F1e1T4jUoIcx0/19M=
 github.com/Checkmarx/containers-types v1.0.4 h1:Sa3y7IraZeeppspV0AmqYTNoDEHqn9yZZZq895SkabM=
 github.com/Checkmarx/containers-types v1.0.4/go.mod h1:KR0w8XCosq3+6jRCfQrH7i//Nj2u11qaUJM62CREFZA=
 github.com/CycloneDX/cyclonedx-go v0.9.2 h1:688QHn2X/5nRezKe2ueIVCt+NRqf7fl3AVQk+vaFcIo=

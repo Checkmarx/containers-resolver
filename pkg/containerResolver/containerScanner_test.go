@@ -45,6 +45,11 @@ func (m *MockSyftPackagesExtractor) AnalyzeImages(images []types.ImageModel) ([]
 	return args.Get(0).([]*syftPackagesExtractor.ContainerResolution), args.Error(1)
 }
 
+func (m *MockSyftPackagesExtractor) AnalyzeImagesWithPlatform(images []types.ImageModel, platform string) ([]*syftPackagesExtractor.ContainerResolution, error) {
+	args := m.Called(images, platform)
+	return args.Get(0).([]*syftPackagesExtractor.ContainerResolution), args.Error(1)
+}
+
 func createTestFolder(dir string) {
 	// Create the directory if it doesn't exist
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -130,7 +135,7 @@ func TestResolve(t *testing.T) {
 			types.ToImageModels(images),
 			map[string]map[string]string{"settings.json": {"key": "value"}}).
 			Return([]types.ImageModel{{Name: "image1"}}, nil)
-		mockSyftPackagesExtractor.On("AnalyzeImages", mock.Anything).Return(expectedResolution, nil)
+		mockSyftPackagesExtractor.On("AnalyzeImagesWithPlatform", mock.Anything, mock.Anything).Return(expectedResolution, nil)
 		mockImagesExtractor.On("SaveObjectToFile", checkmarxPath, expectedResolution).Return(nil)
 
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, true)
@@ -138,7 +143,7 @@ func TestResolve(t *testing.T) {
 
 		mockImagesExtractor.AssertCalled(t, "ExtractFiles", scanPath)
 		mockImagesExtractor.AssertCalled(t, "ExtractAndMergeImagesFromFiles", sampleFileImages, mock.Anything, mock.Anything)
-		mockSyftPackagesExtractor.AssertCalled(t, "AnalyzeImages", mock.Anything)
+		mockSyftPackagesExtractor.AssertCalled(t, "AnalyzeImagesWithPlatform", mock.Anything, "linux/amd64")
 		mockImagesExtractor.AssertCalled(t, "SaveObjectToFile", checkmarxPath, expectedResolution)
 	})
 
@@ -184,7 +189,7 @@ func TestResolve(t *testing.T) {
 			map[string]map[string]string{"settings.json": {"key": "value"}}).
 			Return([]types.ImageModel{{Name: "image1"}}, nil)
 
-		mockSyftPackagesExtractor.On("AnalyzeImages", mock.Anything).Return(expectedResolution, errors.New("error analyzing images"))
+		mockSyftPackagesExtractor.On("AnalyzeImagesWithPlatform", mock.Anything, "linux/amd64").Return(expectedResolution, errors.New("error analyzing images"))
 
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, false)
 		assert.Error(t, err)
