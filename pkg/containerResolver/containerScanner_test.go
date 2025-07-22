@@ -150,6 +150,12 @@ func TestResolve(t *testing.T) {
 		mockImagesExtractor.AssertCalled(t, "ExtractAndMergeImagesFromFiles", sampleFileImages, mock.Anything, mock.Anything)
 		mockSyftPackagesExtractor.AssertCalled(t, "AnalyzeImagesWithPlatform", mock.Anything, "linux/amd64")
 		mockImagesExtractor.AssertCalled(t, "SaveObjectToFile", checkmarxPath, expectedResolution)
+
+		// Verify that the containers directory still exists after Resolve completes
+		// This tests the fix for the cleanup bug where the directory was being deleted too early
+		if _, err := os.Stat(checkmarxPath); os.IsNotExist(err) {
+			t.Errorf("Expected containers directory to exist after Resolve completes, but it was deleted")
+		}
 	})
 
 	t.Run("ScanPath Validation failure", func(t *testing.T) {
