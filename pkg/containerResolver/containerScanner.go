@@ -116,16 +116,12 @@ func cleanup(originalPath string, outputPath string, checkmarxPath string) error
 		}
 	}
 
-	// Clean up containers folder inside .checkmarx if checkmarxPath is provided
-	if checkmarxPath != "" {
-		// checkmarxPath points to .checkmarx/containers, so we delete this directory
-		cxErr := imagesExtractor.DeleteDirectory(checkmarxPath)
-		if cxErr != nil {
-			log.Warn().Err(cxErr).Msg("Could not delete containers directory inside .checkmarx folder")
-		}
-	}
+	// Note: We no longer clean up the containers folder inside .checkmarx here
+	// as the caller (AST CLI) needs the container-resolution.json file for further processing.
+	// The cleanup of .checkmarx/containers should be handled by the caller after it has
+	// processed the resolution file.
 
-	// Only return error from output directory cleanup, not from .checkmarx cleanup
+	// Only return error from output directory cleanup
 	return err
 }
 
