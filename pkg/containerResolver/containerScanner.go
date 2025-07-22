@@ -2,7 +2,9 @@ package containersResolver
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/Checkmarx/containers-images-extractor/pkg/imagesExtractor"
 	"github.com/Checkmarx/containers-syft-packages-extractor/pkg/syftPackagesExtractor"
@@ -55,20 +57,21 @@ func (cr *ContainersResolver) Resolve(scanPath string, resolutionFolderPath stri
 		return err
 	}
 
-	//4. get images resolution
+	//3. get images resolution
 	resolutionResult, err := cr.AnalyzeImagesWithPlatform(imagesToAnalyze, "linux/amd64")
 	if err != nil {
 		log.Err(err).Msg("Could not analyze images.")
 		return err
 	}
 
-	//5. save to resolution file path (now using .checkmarx folder)
+	//4. save to resolution file path (now using .checkmarx folder)
 	err = cr.SaveObjectToFile(checkmarxPath, resolutionResult)
 	if err != nil {
 		log.Err(err).Msg("Could not save resolution result.")
 		return err
 	}
-	//6. cleanup files generated folder
+
+	//5. cleanup files generated folder
 	err = cleanup(resolutionFolderPath, outputPath, checkmarxPath)
 	if err != nil {
 		log.Err(err).Msg("Could not cleanup resources.")
@@ -83,27 +86,56 @@ func validate(resolutionFolderPath string) (string, error) {
 		return "", err
 	}
 
-	checkmarxPath := filepath.Join(resolutionFolderPath, ".checkmarx", "containers")
+	checkmarxFolderPath := filepath.Join(resolutionFolderPath, ".checkmarx")
+	checkmarxPath := filepath.Join(checkmarxFolderPath, "containers")
 
 	err = os.MkdirAll(checkmarxPath, 0755)
 	if err != nil {
 		return "", err
 	}
 
+	// Hide the .checkmarx folder on Windows
+	if runtime.GOOS == "windows" {
+		err = hideDirectoryOnWindows(checkmarxFolderPath)
+		if err != nil {
+			log.Warn().Err(err).Msg("Could not hide .checkmarx folder on Windows")
+		}
+	}
+
 	return checkmarxPath, nil
 }
 
 func cleanup(originalPath string, outputPath string, checkmarxPath string) error {
-	if outputPath != "" && outputPath != originalPath && checkmarxPath != "" {
-		err := imagesExtractor.DeleteDirectory(outputPath)
-		cxErr := imagesExtractor.DeleteDirectory(checkmarxPath)
+	var err error
 
+	// Clean up output path if it's different from original
+	if outputPath != "" && outputPath != originalPath {
+		err = imagesExtractor.DeleteDirectory(outputPath)
 		if err != nil {
-			return err
-		}
-		if cxErr != nil {
-			return cxErr
+			log.Warn().Err(err).Msg("Could not delete output directory")
 		}
 	}
-	return nil
+
+	// Clean up containers folder inside .checkmarx if checkmarxPath is provided
+	if checkmarxPath != "" {
+		// checkmarxPath points to .checkmarx/containers, so we delete this directory
+		cxErr := imagesExtractor.DeleteDirectory(checkmarxPath)
+		if cxErr != nil {
+			log.Warn().Err(cxErr).Msg("Could not delete containers directory inside .checkmarx folder")
+		}
+	}
+
+	// Only return error from output directory cleanup, not from .checkmarx cleanup
+	return err
+}
+
+// hideDirectoryOnWindows sets the hidden attribute on a directory in Windows
+func hideDirectoryOnWindows(dirPath string) error {
+	if runtime.GOOS != "windows" {
+		return nil
+	}
+
+	// Use the attrib command to set the hidden attribute
+	cmd := exec.Command("attrib", "+H", dirPath)
+	return cmd.Run()
 }
