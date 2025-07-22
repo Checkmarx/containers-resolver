@@ -116,8 +116,6 @@ func cleanup(originalPath string, outputPath string, checkmarxPath string) error
 		}
 	}
 
-	// Note: We no longer clean up the containers folder inside .checkmarx here
-	// as the caller (AST CLI) needs the container-resolution.json file for further processing.
 	// The cleanup of .checkmarx/containers should be handled by the caller after it has
 	// processed the resolution file.
 

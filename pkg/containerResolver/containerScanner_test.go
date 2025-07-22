@@ -21,12 +21,17 @@ type MockImagesExtractor struct {
 	mock.Mock
 }
 
-func (m *MockImagesExtractor) ExtractFiles(scanPath string) (types.FileImages, map[string]map[string]string, string, error) {
-	args := m.Called(scanPath)
+func (m *MockImagesExtractor) ExtractFiles(scanPath string, isFullHelmDirectory ...bool) (types.FileImages, map[string]map[string]string, string, error) {
+	args := m.Called(scanPath, isFullHelmDirectory)
 	return args.Get(0).(types.FileImages), args.Get(1).(map[string]map[string]string), args.String(2), args.Error(3)
 }
 
 func (m *MockImagesExtractor) ExtractAndMergeImagesFromFiles(files types.FileImages, images []types.ImageModel, settingsFiles map[string]map[string]string) ([]types.ImageModel, error) {
+	args := m.Called(files, images, settingsFiles)
+	return args.Get(0).([]types.ImageModel), args.Error(1)
+}
+
+func (m *MockImagesExtractor) ExtractAndMergeImagesFromFilesWithLineInfo(files types.FileImages, images []types.ImageModel, settingsFiles map[string]map[string]string) ([]types.ImageModel, error) {
 	args := m.Called(files, images, settingsFiles)
 	return args.Get(0).([]types.ImageModel), args.Error(1)
 }
@@ -128,7 +133,7 @@ func TestResolve(t *testing.T) {
 		checkmarxPath := filepath.Join(resolutionFolderPath, ".checkmarx", "containers")
 		createTestFolder(checkmarxPath)
 
-		mockImagesExtractor.On("ExtractFiles", scanPath).
+		mockImagesExtractor.On("ExtractFiles", scanPath, mock.Anything).
 			Return(sampleFileImages, map[string]map[string]string{"settings.json": {"key": "value"}}, "/output/path", nil)
 		mockImagesExtractor.On("ExtractAndMergeImagesFromFiles",
 			sampleFileImages,
@@ -141,10 +146,16 @@ func TestResolve(t *testing.T) {
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, true)
 		assert.NoError(t, err)
 
-		mockImagesExtractor.AssertCalled(t, "ExtractFiles", scanPath)
+		mockImagesExtractor.AssertCalled(t, "ExtractFiles", scanPath, mock.Anything)
 		mockImagesExtractor.AssertCalled(t, "ExtractAndMergeImagesFromFiles", sampleFileImages, mock.Anything, mock.Anything)
 		mockSyftPackagesExtractor.AssertCalled(t, "AnalyzeImagesWithPlatform", mock.Anything, "linux/amd64")
 		mockImagesExtractor.AssertCalled(t, "SaveObjectToFile", checkmarxPath, expectedResolution)
+
+		// Verify that the containers directory still exists after Resolve completes
+		// This tests the fix for the cleanup bug where the directory was being deleted too early
+		if _, err := os.Stat(checkmarxPath); os.IsNotExist(err) {
+			t.Errorf("Expected containers directory to exist after Resolve completes, but it was deleted")
+		}
 	})
 
 	t.Run("ScanPath Validation failure", func(t *testing.T) {
@@ -163,14 +174,14 @@ func TestResolve(t *testing.T) {
 		checkmarxPath := filepath.Join(resolutionFolderPath, ".checkmarx", "containers")
 		createTestFolder(checkmarxPath)
 
-		mockImagesExtractor.On("ExtractFiles", scanPath).
+		mockImagesExtractor.On("ExtractFiles", scanPath, mock.Anything).
 			Return(sampleFileImages, map[string]map[string]string{"settings.json": {"key": "value"}}, "/output/path",
 				errors.New("invalid path"))
 
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, false)
 		assert.Error(t, err)
 		assert.Equal(t, "invalid path", err.Error())
-		mockImagesExtractor.AssertCalled(t, "ExtractFiles", scanPath)
+		mockImagesExtractor.AssertCalled(t, "ExtractFiles", scanPath, mock.Anything)
 	})
 
 	t.Run("Error in AnalyzeImages", func(t *testing.T) {
@@ -182,7 +193,7 @@ func TestResolve(t *testing.T) {
 		checkmarxPath := filepath.Join(resolutionFolderPath, ".checkmarx", "containers")
 		createTestFolder(checkmarxPath)
 
-		mockImagesExtractor.On("ExtractFiles", scanPath).
+		mockImagesExtractor.On("ExtractFiles", scanPath, mock.Anything).
 			Return(sampleFileImages, map[string]map[string]string{"settings.json": {"key": "value"}}, "/output/path", nil)
 
 		mockImagesExtractor.On("ExtractAndMergeImagesFromFiles", sampleFileImages, types.ToImageModels(images),
