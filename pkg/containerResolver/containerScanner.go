@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/Checkmarx/containers-images-extractor/pkg/imagesExtractor"
 	"github.com/Checkmarx/containers-syft-packages-extractor/pkg/syftPackagesExtractor"
@@ -33,7 +34,7 @@ func (cr *ContainersResolver) Resolve(scanPath string, resolutionFolderPath stri
 	} else {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
-	log.Debug().Msgf("Resolve func parameters: scanPath=%s, resolutionFolderPath=%s, images=%s, isDebug=%t", scanPath, resolutionFolderPath, images, isDebug)
+	log.Debug().Msgf("Resolve func parameters: scanPath=%s, resolutionFolderPath=%s, images=%s, isDebug=%t", scanPath, resolutionFolderPath, strings.Join(images, ","), isDebug)
 
 	// 0. validate input and create .checkmarx folder
 	checkmarxPath, err := validate(resolutionFolderPath)
@@ -72,7 +73,7 @@ func (cr *ContainersResolver) Resolve(scanPath string, resolutionFolderPath stri
 	}
 
 	//5. cleanup files generated folder
-	err = cleanup(resolutionFolderPath, outputPath, checkmarxPath)
+	err = cleanup(scanPath, outputPath, checkmarxPath)
 	if err != nil {
 		log.Err(err).Msg("Could not cleanup resources.")
 		return err
