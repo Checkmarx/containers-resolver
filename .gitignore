@@ -49,3 +49,6 @@ override.tf.json
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
 # Folder view configuration files
 .DS_Store
+
+# Ignore vendor directory (Go modules)
+vendor/
