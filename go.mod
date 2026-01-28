@@ -289,5 +289,6 @@ require (
 replace (
 	github.com/containerd/containerd/v2 => github.com/containerd/containerd/v2 v2.1.4
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.3.3
+	github.com/sigstore/sigstore => github.com/sigstore/sigstore v1.10.4
 	google.golang.org/protobuf => google.golang.org/protobuf v1.33.0
 )
