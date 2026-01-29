@@ -287,7 +287,8 @@ require (
 )
 
 replace (
-	github.com/containerd/containerd/v2 => github.com/containerd/containerd/v2 v2.1.4
+	github.com/containerd/containerd/v2 => github.com/containerd/containerd/v2 v2.1.5
+	github.com/open-policy-agent/opa => github.com/open-policy-agent/opa v1.4.2
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.3.3
 	google.golang.org/protobuf => google.golang.org/protobuf v1.33.0
 )
