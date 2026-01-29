@@ -287,8 +287,15 @@ require (
 )
 
 replace (
-	github.com/containerd/containerd/v2 => github.com/containerd/containerd/v2 v2.1.4
+	// CVE-2025-64329, CVE-2024-25621 - fixed in v2.1.5
+	github.com/containerd/containerd/v2 => github.com/containerd/containerd/v2 v2.1.5
+	// CVE-2025-22868 - fixed in v1.2.31
+	github.com/lestrrat-go/jwx => github.com/lestrrat-go/jwx v1.2.31
+	// CVE-2025-46569 - fixed in v1.4.0
+	github.com/open-policy-agent/opa => github.com/open-policy-agent/opa v1.4.0
+	// CVE-2025-31133, CVE-2025-52881, CVE-2025-52565 - fixed in v1.3.3
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.3.3
+	// CVE-2026-24137 - fixed in v1.10.4
 	github.com/sigstore/sigstore => github.com/sigstore/sigstore v1.10.4
 	google.golang.org/protobuf => google.golang.org/protobuf v1.33.0
 )
