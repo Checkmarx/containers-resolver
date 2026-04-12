@@ -6,7 +6,7 @@ require (
 	github.com/Checkmarx/containers-images-extractor v1.0.22
 	github.com/Checkmarx/containers-syft-packages-extractor v1.0.25
 	github.com/Checkmarx/containers-types v1.0.9
-	github.com/rs/zerolog v1.34.0
+	github.com/rs/zerolog v1.35.0
 	github.com/stretchr/testify v1.11.1
 )
 
