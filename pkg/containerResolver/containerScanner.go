@@ -58,7 +58,10 @@ func (cr *ContainersResolver) Resolve(scanPath string, resolutionFolderPath stri
 	}
 
 	//3. get images resolution
-	resolutionResult, err := cr.AnalyzeImagesWithPlatform(imagesToAnalyze, "linux/amd64")
+	// No platform is requested so that each image is resolved on the platform it was actually
+	// built for. Forcing linux/amd64 here made every single-architecture image built for another
+	// architecture (e.g. a locally built linux/arm64 image) fail to resolve (AST-165915).
+	resolutionResult, err := cr.AnalyzeImages(imagesToAnalyze)
 	if err != nil {
 		log.Err(err).Msg("Could not analyze images.")
 		return err

@@ -140,7 +140,7 @@ func TestResolve(t *testing.T) {
 			types.ToImageModels(images),
 			map[string]map[string]string{"settings.json": {"key": "value"}}).
 			Return([]types.ImageModel{{Name: "image1"}}, nil)
-		mockSyftPackagesExtractor.On("AnalyzeImagesWithPlatform", mock.Anything, mock.Anything).Return(expectedResolution, nil)
+		mockSyftPackagesExtractor.On("AnalyzeImages", mock.Anything).Return(expectedResolution, nil)
 		mockImagesExtractor.On("SaveObjectToFile", checkmarxPath, expectedResolution).Return(nil)
 
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, true)
@@ -148,7 +148,10 @@ func TestResolve(t *testing.T) {
 
 		mockImagesExtractor.AssertCalled(t, "ExtractFiles", scanPath, mock.Anything)
 		mockImagesExtractor.AssertCalled(t, "ExtractAndMergeImagesFromFiles", sampleFileImages, mock.Anything, mock.Anything)
-		mockSyftPackagesExtractor.AssertCalled(t, "AnalyzeImagesWithPlatform", mock.Anything, "linux/amd64")
+		// No platform must be forced, so that images are resolved on the platform they were
+		// built for instead of failing on a platform mismatch (AST-165915).
+		mockSyftPackagesExtractor.AssertCalled(t, "AnalyzeImages", mock.Anything)
+		mockSyftPackagesExtractor.AssertNotCalled(t, "AnalyzeImagesWithPlatform", mock.Anything, mock.Anything)
 		mockImagesExtractor.AssertCalled(t, "SaveObjectToFile", checkmarxPath, expectedResolution)
 
 		// Verify that the containers directory still exists after Resolve completes
@@ -200,7 +203,7 @@ func TestResolve(t *testing.T) {
 			map[string]map[string]string{"settings.json": {"key": "value"}}).
 			Return([]types.ImageModel{{Name: "image1"}}, nil)
 
-		mockSyftPackagesExtractor.On("AnalyzeImagesWithPlatform", mock.Anything, "linux/amd64").Return(expectedResolution, errors.New("error analyzing images"))
+		mockSyftPackagesExtractor.On("AnalyzeImages", mock.Anything).Return(expectedResolution, errors.New("error analyzing images"))
 
 		err := resolver.Resolve(scanPath, resolutionFolderPath, images, false)
 		assert.Error(t, err)
