@@ -4,7 +4,7 @@ go 1.25.8
 
 require (
 	github.com/Checkmarx/containers-images-extractor v1.0.22
-	github.com/Checkmarx/containers-syft-packages-extractor v1.0.26
+	github.com/Checkmarx/containers-syft-packages-extractor v1.0.27
 	github.com/Checkmarx/containers-types v1.0.9
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
